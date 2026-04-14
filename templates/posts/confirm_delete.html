@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block title %}Delete Project{% endblock %}
+{% block content %}
+<div class="container" style="max-width:500px">
+  <div class="card" style="margin-top:3rem;">
+    <div class="card-body text-center">
+      <div style="font-size:3rem;margin-bottom:1rem;">🗑️</div>
+      <h2 class="page-title">Delete Project?</h2>
+      <p class="page-subtitle">This action cannot be undone. "{{ post.title }}" will be permanently deleted.</p>
+      <div class="flex gap-2 mt-4" style="justify-content:center;">
+        <form method="post">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger">Yes, Delete</button>
+        </form>
+        <a href="{% url 'posts:detail' pk=post.pk %}" class="btn btn-ghost">Cancel</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

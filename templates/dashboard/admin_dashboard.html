@@ -1,0 +1,175 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Admin Dashboard{% endblock %}
+{% block nav_dashboard %}active{% endblock %}
+{% block extra_css %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+{% endblock %}
+{% block content %}
+<div class="container-wide">
+  <div class="page-header">
+    <h1 class="page-title">📊 Admin Dashboard</h1>
+    <p class="page-subtitle">Platform overview and analytics</p>
+  </div>
+
+  <!-- Stat Cards -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon stat-icon-purple">👥</div>
+      <div><div class="stat-value">{{ total_users }}</div><div class="stat-label-text">Total Users</div></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon stat-icon-blue">🚀</div>
+      <div><div class="stat-value">{{ total_posts }}</div><div class="stat-label-text">Total Projects</div></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon stat-icon-pink">❤️</div>
+      <div><div class="stat-value">{{ total_likes }}</div><div class="stat-label-text">Total Likes</div></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon stat-icon-green">💬</div>
+      <div><div class="stat-value">{{ total_comments }}</div><div class="stat-label-text">Comments</div></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon stat-icon-orange">🧠</div>
+      <div><div class="stat-value">{{ total_quizzes }}</div><div class="stat-label-text">Quizzes</div></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon stat-icon-teal">📝</div>
+      <div><div class="stat-value">{{ total_quiz_attempts }}</div><div class="stat-label-text">Quiz Attempts</div></div>
+    </div>
+  </div>
+
+  <!-- Charts Row -->
+  <div class="chart-grid">
+    <div class="chart-card">
+      <div class="chart-title">📅 Posts (Last 7 Days)</div>
+      <canvas id="postsChart" height="140"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">👤 New Users (Last 7 Days)</div>
+      <canvas id="usersChart" height="140"></canvas>
+    </div>
+  </div>
+
+  <!-- Bottom row -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;" class="chart-grid">
+
+    <!-- Top posts -->
+    <div class="card">
+      <div class="card-header"><h3 class="font-bold">🔥 Top Projects by Likes</h3></div>
+      <div class="card-body" style="padding:0.5rem;">
+        {% for post in top_posts %}
+        <div class="leaderboard-row">
+          <div class="lb-rank {% if forloop.counter == 1 %}lb-rank-1{% elif forloop.counter == 2 %}lb-rank-2{% elif forloop.counter == 3 %}lb-rank-3{% endif %}">{{ forloop.counter }}</div>
+          <div style="flex:1;">
+            <a href="{% url 'posts:detail' pk=post.pk %}" class="font-bold text-sm">{{ post.title|truncatechars:35 }}</a>
+            <div class="text-muted" style="font-size:0.75rem;">by @{{ post.author.username }}</div>
+          </div>
+          <span class="quiz-badge badge-published">❤️ {{ post.num_likes }}</span>
+        </div>
+        {% empty %}
+        <p class="text-muted text-sm" style="padding:1rem;">No posts yet.</p>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Quiz participation -->
+    <div class="card">
+      <div class="card-header"><h3 class="font-bold">🧠 Quiz Participation</h3></div>
+      <div class="card-body" style="padding:0.5rem;">
+        {% for quiz in quiz_stats %}
+        <div class="leaderboard-row">
+          <div class="lb-rank">{{ forloop.counter }}</div>
+          <div style="flex:1;">
+            <div class="font-bold text-sm">{{ quiz.title|truncatechars:35 }}</div>
+            <div class="text-muted" style="font-size:0.75rem;">{{ quiz.attempts }} attempt{{ quiz.attempts|pluralize }}</div>
+          </div>
+          <span class="quiz-badge badge-attempted">{{ quiz.attempts }}</span>
+        </div>
+        {% empty %}
+        <p class="text-muted text-sm" style="padding:1rem;">No quizzes yet.</p>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Recent users -->
+    <div class="card" style="grid-column:1/-1;">
+      <div class="card-header"><h3 class="font-bold">🆕 Recent Signups</h3></div>
+      <div class="card-body" style="padding:0;">
+        <table style="width:100%;border-collapse:collapse;">
+          <thead><tr style="background:var(--bg-surface-2);">
+            <th style="padding:0.7rem 1rem;text-align:left;font-size:0.8rem;color:var(--text-muted);">USER</th>
+            <th style="padding:0.7rem 1rem;text-align:left;font-size:0.8rem;color:var(--text-muted);">EMAIL</th>
+            <th style="padding:0.7rem 1rem;text-align:left;font-size:0.8rem;color:var(--text-muted);">ROLE</th>
+            <th style="padding:0.7rem 1rem;text-align:left;font-size:0.8rem;color:var(--text-muted);">JOINED</th>
+          </tr></thead>
+          <tbody>
+          {% for u in recent_users %}
+          <tr style="border-bottom:1px solid var(--border-color);">
+            <td style="padding:0.75rem 1rem;">
+              <div class="flex items-center gap-2">
+                <div class="post-author-avatar" style="width:28px;height:28px;">{{ u.username|first|upper }}</div>
+                <a href="{% url 'accounts:profile' username=u.username %}">{{ u.get_full_name|default:u.username }}</a>
+              </div>
+            </td>
+            <td style="padding:0.75rem 1rem;font-size:0.85rem;color:var(--text-secondary);">{{ u.email }}</td>
+            <td style="padding:0.75rem 1rem;">
+              <span class="quiz-badge {% if u.role == 'admin' %}badge-published{% else %}badge-attempted{% endif %}">{{ u.get_role_display }}</span>
+            </td>
+            <td style="padding:0.75rem 1rem;font-size:0.85rem;color:var(--text-muted);">{{ u.date_joined|date:"N j, Y" }}</td>
+          </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% block extra_js %}
+<script>
+const isDark = document.documentElement.dataset.theme === 'dark';
+const gridClr = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
+const labelClr = isDark ? '#9B99CC' : '#6B7080';
+
+const commonOpts = {
+  responsive: true,
+  plugins: { legend: { display: false } },
+  scales: {
+    x: { grid: { color: gridClr }, ticks: { color: labelClr } },
+    y: { beginAtZero: true, grid: { color: gridClr }, ticks: { color: labelClr, precision: 0 } }
+  }
+};
+
+const postsData = {
+  labels: {{ posts_per_day|safe }}.map(d => d.day),
+  datasets: [{
+    label: 'Posts',
+    data: {{ posts_per_day|safe }}.map(d => d.count),
+    backgroundColor: 'rgba(108,99,255,0.25)',
+    borderColor: '#6C63FF',
+    borderWidth: 2,
+    fill: true,
+    tension: 0.4,
+  }]
+};
+
+const usersData = {
+  labels: {{ users_per_day|safe }}.map(d => d.day),
+  datasets: [{
+    label: 'Users',
+    data: {{ users_per_day|safe }}.map(d => d.count),
+    backgroundColor: 'rgba(67,233,123,0.25)',
+    borderColor: '#43E97B',
+    borderWidth: 2,
+    fill: true,
+    tension: 0.4,
+  }]
+};
+
+new Chart(document.getElementById('postsChart'), { type: 'line', data: postsData, options: commonOpts });
+new Chart(document.getElementById('usersChart'), { type: 'line', data: usersData, options: commonOpts });
+</script>
+{% endblock %}
+{% endblock %}

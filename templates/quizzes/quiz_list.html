@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% block title %}Quizzes{% endblock %}
+{% block nav_quizzes %}active{% endblock %}
+{% block content %}
+<div class="container-wide">
+  <div class="feed-header">
+    <div>
+      <h1 class="page-title">🧠 Quizzes</h1>
+      <p class="page-subtitle">Test your knowledge and compete!</p>
+    </div>
+    {% if user.is_staff_admin %}
+    <a href="{% url 'quizzes:create' %}" class="btn btn-primary">+ Create Quiz</a>
+    {% endif %}
+  </div>
+
+  {% if quizzes %}
+  <div class="quiz-grid">
+    {% for quiz in quizzes %}
+    <div class="quiz-card">
+      <div class="flex items-center gap-2">
+        {% if quiz.is_published %}
+          <span class="quiz-badge badge-published">✅ Published</span>
+        {% else %}
+          <span class="quiz-badge badge-draft">📝 Draft</span>
+        {% endif %}
+        {% if quiz.pk in attempted_ids %}
+          <span class="quiz-badge badge-attempted">✓ Attempted</span>
+        {% endif %}
+      </div>
+      <h3 class="font-bold" style="font-family:var(--font-display);font-size:1.05rem;">{{ quiz.title }}</h3>
+      <p class="text-muted text-sm">{{ quiz.description|truncatechars:90 }}</p>
+      <div class="flex gap-2 flex-wrap">
+        <span class="quiz-timer">⏱️ {{ quiz.time_limit }} min</span>
+        <span class="quiz-timer">❓ {{ quiz.question_count }} questions</span>
+        <span class="quiz-timer">👥 {{ quiz.attempt_count }} attempts</span>
+      </div>
+      <div class="flex gap-2 mt-1">
+        {% if quiz.pk in attempted_ids %}
+          <a href="{% url 'quizzes:results' pk=quiz.pk %}" class="btn btn-secondary btn-sm">📊 My Results</a>
+        {% elif quiz.is_published %}
+          <a href="{% url 'quizzes:detail' pk=quiz.pk %}" class="btn btn-primary btn-sm">Take Quiz →</a>
+        {% endif %}
+        {% if user.is_staff_admin %}
+          <a href="{% url 'quizzes:edit' pk=quiz.pk %}" class="btn btn-ghost btn-sm">✏️</a>
+          <a href="{% url 'quizzes:delete' pk=quiz.pk %}" class="btn btn-ghost btn-sm" style="color:var(--brand-secondary)">🗑️</a>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-icon">🧠</div>
+    <div class="empty-title">No quizzes yet</div>
+    <p class="empty-sub">{% if user.is_staff_admin %}Create the first quiz!{% else %}Check back soon.{% endif %}</p>
+    {% if user.is_staff_admin %}<a href="{% url 'quizzes:create' %}" class="btn btn-primary">Create Quiz</a>{% endif %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

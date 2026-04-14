@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+{% block title %}Create Quiz{% endblock %}
+{% block nav_quiz_create %}active{% endblock %}
+{% block content %}
+<div class="container" style="max-width:760px">
+  <div class="page-header">
+    <h1 class="page-title">📝 Create Quiz</h1>
+    <p class="page-subtitle">Build a quiz for students to attempt.</p>
+  </div>
+
+  <form method="post" id="quiz-builder-form">
+    {% csrf_token %}
+    <input type="hidden" name="question_count" id="question_count" value="0">
+
+    <div class="card mb-3">
+      <div class="card-header"><h3 class="font-bold">Quiz Details</h3></div>
+      <div class="card-body">
+        <div class="form-group">
+          <label class="form-label">Quiz Title *</label>
+          {{ quiz_form.title }}
+          {% if quiz_form.title.errors %}<span class="form-error">{{ quiz_form.title.errors|join:", " }}</span>{% endif %}
+        </div>
+        <div class="form-group">
+          <label class="form-label">Description</label>
+          {{ quiz_form.description }}
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+          <div class="form-group">
+            <label class="form-label">Time Limit (minutes) *</label>
+            {{ quiz_form.time_limit }}
+          </div>
+          <div class="form-group" style="display:flex;align-items:center;gap:0.75rem;padding-top:1.75rem;">
+            {{ quiz_form.is_published }}
+            <label class="form-label" style="margin:0;">Publish immediately</label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mb-3">
+      <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+        <h3 class="font-bold">Questions</h3>
+        <button type="button" id="add-question-btn" class="btn btn-secondary btn-sm">+ Add Question</button>
+      </div>
+      <div class="card-body">
+        <div id="questions-container"></div>
+        <p class="text-muted text-sm" id="no-questions-hint">Click "Add Question" to start building your quiz.</p>
+      </div>
+    </div>
+
+    <div class="flex gap-2">
+      <button type="submit" class="btn btn-primary btn-lg">🚀 Save Quiz</button>
+      <a href="{% url 'quizzes:list' %}" class="btn btn-ghost btn-lg">Cancel</a>
+    </div>
+  </form>
+</div>
+
+{% block extra_js %}
+<script>
+  // Hide hint when first question is added
+  const hint = document.getElementById('no-questions-hint');
+  const container = document.getElementById('questions-container');
+  const observer = new MutationObserver(() => {
+    hint.style.display = container.children.length > 0 ? 'none' : 'block';
+  });
+  observer.observe(container, { childList: true });
+</script>
+{% endblock %}
+{% endblock %}

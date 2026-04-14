@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% block title %}Notifications{% endblock %}
+{% block nav_notifs %}active{% endblock %}
+{% block content %}
+<div class="container" style="max-width:700px">
+  <div class="page-header">
+    <h1 class="page-title">🔔 Notifications</h1>
+    <p class="page-subtitle">Stay updated on your activity.</p>
+  </div>
+
+  <div class="card">
+    {% if notifications %}
+      {% for notif in notifications %}
+      <div class="notif-item {% if not notif.is_read %}unread{% endif %}">
+        <div class="notif-icon">
+          {% if notif.notification_type == 'like' %}❤️
+          {% elif notif.notification_type == 'comment' %}💬
+          {% elif notif.notification_type == 'quiz' %}🧠
+          {% else %}📢{% endif %}
+        </div>
+        <div class="notif-content">
+          {% if notif.link %}
+            <a href="{{ notif.link }}" class="notif-text" style="color:var(--text-primary);">{{ notif.message }}</a>
+          {% else %}
+            <div class="notif-text">{{ notif.message }}</div>
+          {% endif %}
+          <div class="notif-time">{{ notif.created_at|timesince }} ago</div>
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="empty-state">
+        <div class="empty-icon">🔕</div>
+        <div class="empty-title">All caught up!</div>
+        <p class="empty-sub">No notifications yet. Once people like or comment on your projects, you'll see them here.</p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

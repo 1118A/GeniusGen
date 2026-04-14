@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% block title %}{{ quiz.title }} — Results{% endblock %}
+{% block content %}
+<div class="container" style="max-width:620px">
+
+  <div class="card text-center" style="padding:2.5rem;margin-bottom:1.5rem;">
+    <div class="score-circle">
+      <div class="score-num">{{ result.score|floatformat:0 }}/{{ result.max_score|floatformat:0 }}</div>
+      <div class="score-pct">{{ result.percentage }}%</div>
+    </div>
+    <h1 style="font-family:var(--font-display);font-size:1.6rem;font-weight:800;">
+      {% if result.percentage >= 80 %}🏆 Excellent!
+      {% elif result.percentage >= 60 %}👍 Good Job!
+      {% elif result.percentage >= 40 %}📖 Keep Practicing!
+      {% else %}💪 Keep Going!
+      {% endif %}
+    </h1>
+    <p class="text-muted mt-2">You scored {{ result.score|floatformat:0 }} out of {{ result.max_score|floatformat:0 }} points on <strong>{{ quiz.title }}</strong></p>
+    <p class="text-muted text-sm">Completed {{ result.completed_at|timesince }} ago</p>
+    <div class="flex gap-2 mt-4" style="justify-content:center;">
+      <a href="{% url 'quizzes:list' %}" class="btn btn-primary">Back to Quizzes</a>
+      <a href="{% url 'posts:feed' %}" class="btn btn-ghost">Go to Feed</a>
+    </div>
+  </div>
+
+  {% if all_results %}
+  <div class="card">
+    <div class="card-header"><h3 class="font-bold">🏅 Leaderboard</h3></div>
+    <div class="card-body" style="padding:0.75rem;">
+      {% for r in all_results %}
+      <div class="leaderboard-row">
+        <div class="lb-rank {% if forloop.counter == 1 %}lb-rank-1{% elif forloop.counter == 2 %}lb-rank-2{% elif forloop.counter == 3 %}lb-rank-3{% endif %}">{{ forloop.counter }}</div>
+        <a href="{% url 'accounts:profile' username=r.user.username %}" class="post-author-avatar" style="width:30px;height:30px;font-size:0.8rem;">
+          {% if r.user.avatar %}<img src="{{ r.user.avatar.url }}" alt="">{% else %}{{ r.user.username|first|upper }}{% endif %}
+        </a>
+        <span class="font-bold text-sm" style="flex:1;">{{ r.user.get_full_name|default:r.user.username }}</span>
+        <span class="quiz-badge badge-published">{{ r.percentage }}%</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

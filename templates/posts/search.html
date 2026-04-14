@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% block title %}Search{% endblock %}
+{% block nav_search %}active{% endblock %}
+{% block content %}
+<div class="container-wide">
+  <div class="page-header">
+    <h1 class="page-title">🔍 Explore Projects</h1>
+  </div>
+  <form method="get" action="{% url 'posts:search' %}" class="mb-4">
+    <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
+      <input type="text" name="q" value="{{ query }}" class="form-control" placeholder="Search projects, tech, authors..." style="flex:1;min-width:200px;">
+      <input type="text" name="tech" value="{{ tech_filter }}" class="form-control" placeholder="Filter by tech e.g. React" style="max-width:200px;">
+      <button type="submit" class="btn btn-primary">Search</button>
+    </div>
+  </form>
+
+  {% if query or tech_filter %}
+    <div class="text-muted text-sm mb-3">
+      {{ posts.count }} result{{ posts.count|pluralize }} for "{{ query }}"{% if tech_filter %} + tech: {{ tech_filter }}{% endif %}
+    </div>
+    {% if posts %}
+    <div class="feed-grid">
+      {% for post in posts %}
+      <div class="post-card">
+        <div class="post-card-image">
+          {% if post.image %}<img src="{{ post.image.url }}" alt="{{ post.title }}" loading="lazy">
+          {% else %}<div class="post-card-image-placeholder"><span class="placeholder-emoji">💻</span></div>{% endif %}
+        </div>
+        <div class="post-card-body">
+          <div class="post-card-meta">
+            <a href="{% url 'accounts:profile' username=post.author.username %}" class="post-author-avatar">
+              {% if post.author.avatar %}<img src="{{ post.author.avatar.url }}" alt="">{% else %}{{ post.author.username|first|upper }}{% endif %}
+            </a>
+            <span class="post-author-name">{{ post.author.username }}</span>
+            <span class="post-date">{{ post.created_at|timesince }} ago</span>
+          </div>
+          <h3 class="post-title"><a href="{% url 'posts:detail' pk=post.pk %}">{{ post.title }}</a></h3>
+          <p class="post-description">{{ post.description }}</p>
+          <div class="tech-tags">{% for tag in post.tech_stack_list %}<span class="tech-tag">{{ tag }}</span>{% endfor %}</div>
+        </div>
+        <div class="post-card-footer">
+          <button class="post-action-btn like-btn {% if post.pk in liked_ids %}active{% endif %}" data-post-id="{{ post.pk }}">
+            <span class="like-icon">{% if post.pk in liked_ids %}❤️{% else %}🤍{% endif %}</span>
+            <span class="like-count">{{ post.likes_count }}</span>
+          </button>
+          <a href="{{ post.live_link }}" target="_blank" class="post-link-btn ml-auto">🔗 Live</a>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <div class="empty-icon">🔎</div>
+      <div class="empty-title">No results found</div>
+      <p class="empty-sub">Try different keywords or tech filters.</p>
+    </div>
+    {% endif %}
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-icon">💡</div>
+    <div class="empty-title">What are you looking for?</div>
+    <p class="empty-sub">Search by project name, description, tech stack, or username.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

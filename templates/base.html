@@ -1,0 +1,175 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="{% block meta_description %}GeniusGen — Where students showcase real projects and connect with collaborators.{% endblock %}">
+    <title>{% block title %}GeniusGen{% endblock %} | Student Project Platform</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/main.css' %}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+<!-- Toast Container -->
+<div id="toast-container" role="alert" aria-live="polite"></div>
+
+<!-- Navbar -->
+<nav class="navbar" id="main-navbar">
+    <div class="nav-container">
+        <a href="{% url 'posts:feed' %}" class="nav-brand">
+            <span class="brand-icon">⚡</span>
+            <span class="brand-text">GeniusGen</span>
+        </a>
+
+        <div class="nav-search">
+            <form action="{% url 'posts:search' %}" method="get" class="search-form">
+                <span class="search-icon">🔍</span>
+                <input type="text" name="q" placeholder="Search projects, users, tech..." 
+                       class="search-input" value="{{ request.GET.q }}" autocomplete="off" id="nav-search-input">
+            </form>
+        </div>
+
+        <div class="nav-actions">
+            {% if user.is_authenticated %}
+                <a href="{% url 'posts:create' %}" class="btn btn-primary btn-sm" id="create-post-btn">
+                    <span>+</span> Post Project
+                </a>
+
+                <div class="nav-notification" id="notification-wrapper">
+                    <a href="{% url 'notifications:list' %}" class="notif-bell" id="notif-bell-link">
+                        <span class="bell-icon">🔔</span>
+                        <span class="notif-badge" id="notif-badge" style="display: none;">0</span>
+                    </a>
+                </div>
+
+                <div class="nav-user" id="user-menu-toggle">
+                    <div class="user-avatar-sm">
+                        {% if user.avatar %}
+                            <img src="{{ user.avatar.url }}" alt="{{ user.username }}">
+                        {% else %}
+                            <span>{{ user.username|first|upper }}</span>
+                        {% endif %}
+                    </div>
+                    <span class="user-name-nav">{{ user.username }}</span>
+                    <div class="dropdown-menu" id="user-dropdown">
+                        <a href="{% url 'accounts:profile' username=user.username %}" class="dropdown-item">👤 My Profile</a>
+                        <a href="{% url 'posts:bookmarks' %}" class="dropdown-item">🔖 Bookmarks</a>
+                        {% if user.is_staff_admin %}
+                            <a href="{% url 'dashboard:admin' %}" class="dropdown-item">📊 Dashboard</a>
+                            <a href="{% url 'quizzes:create' %}" class="dropdown-item">➕ Create Quiz</a>
+                        {% endif %}
+                        <a href="{% url 'accounts:edit_profile' %}" class="dropdown-item">⚙️ Settings</a>
+                        <div class="dropdown-divider"></div>
+                        <form action="{% url 'accounts:logout' %}" method="post" style="margin:0">
+                            {% csrf_token %}
+                            <button type="submit" class="dropdown-item logout-btn">🚪 Sign Out</button>
+                        </form>
+                    </div>
+                </div>
+            {% else %}
+                <a href="{% url 'accounts:login' %}" class="btn btn-ghost btn-sm">Sign in</a>
+                <a href="{% url 'accounts:signup' %}" class="btn btn-primary btn-sm">Join Free</a>
+            {% endif %}
+
+            <button class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode">
+                <span class="theme-icon">🌙</span>
+            </button>
+
+            <button class="mobile-menu-btn" id="mobile-menu-btn" aria-label="Toggle menu">
+                <span></span><span></span><span></span>
+            </button>
+        </div>
+    </div>
+</nav>
+
+<!-- Mobile Menu -->
+<div class="mobile-menu" id="mobile-menu">
+    {% if user.is_authenticated %}
+        <a href="{% url 'posts:feed' %}" class="mobile-link">🏠 Feed</a>
+        <a href="{% url 'posts:create' %}" class="mobile-link">➕ Post Project</a>
+        <a href="{% url 'accounts:profile' username=user.username %}" class="mobile-link">👤 Profile</a>
+        <a href="{% url 'posts:bookmarks' %}" class="mobile-link">🔖 Bookmarks</a>
+        <a href="{% url 'quizzes:list' %}" class="mobile-link">🧠 Quizzes</a>
+        <a href="{% url 'notifications:list' %}" class="mobile-link">🔔 Notifications</a>
+        {% if user.is_staff_admin %}
+            <a href="{% url 'dashboard:admin' %}" class="mobile-link">📊 Dashboard</a>
+        {% endif %}
+        <form action="{% url 'accounts:logout' %}" method="post" style="margin: 0">
+            {% csrf_token %}
+            <button type="submit" class="mobile-link mobile-logout">🚪 Sign Out</button>
+        </form>
+    {% else %}
+        <a href="{% url 'accounts:login' %}" class="mobile-link">Sign in</a>
+        <a href="{% url 'accounts:signup' %}" class="mobile-link">Join Free</a>
+    {% endif %}
+</div>
+
+<!-- Main Layout -->
+<div class="layout">
+    {% if user.is_authenticated %}
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <nav class="sidebar-nav">
+            <a href="{% url 'posts:feed' %}" class="sidebar-link {% block nav_feed %}{% endblock %}">
+                <span class="sidebar-icon">🏠</span><span>Feed</span>
+            </a>
+            <a href="{% url 'posts:search' %}" class="sidebar-link {% block nav_search %}{% endblock %}">
+                <span class="sidebar-icon">🔍</span><span>Explore</span>
+            </a>
+            <a href="{% url 'posts:create' %}" class="sidebar-link {% block nav_create %}{% endblock %}">
+                <span class="sidebar-icon">➕</span><span>Post Project</span>
+            </a>
+            <a href="{% url 'quizzes:list' %}" class="sidebar-link {% block nav_quizzes %}{% endblock %}">
+                <span class="sidebar-icon">🧠</span><span>Quizzes</span>
+            </a>
+            <a href="{% url 'posts:bookmarks' %}" class="sidebar-link {% block nav_bookmarks %}{% endblock %}">
+                <span class="sidebar-icon">🔖</span><span>Bookmarks</span>
+            </a>
+            <a href="{% url 'notifications:list' %}" class="sidebar-link {% block nav_notifs %}{% endblock %}">
+                <span class="sidebar-icon">🔔</span><span>Notifications</span>
+            </a>
+            <a href="{% url 'accounts:profile' username=user.username %}" class="sidebar-link {% block nav_profile %}{% endblock %}">
+                <span class="sidebar-icon">👤</span><span>Profile</span>
+            </a>
+            {% if user.is_staff_admin %}
+            <div class="sidebar-divider"></div>
+            <a href="{% url 'dashboard:admin' %}" class="sidebar-link {% block nav_dashboard %}{% endblock %}">
+                <span class="sidebar-icon">📊</span><span>Dashboard</span>
+            </a>
+            <a href="{% url 'quizzes:create' %}" class="sidebar-link {% block nav_quiz_create %}{% endblock %}">
+                <span class="sidebar-icon">📝</span><span>Create Quiz</span>
+            </a>
+            {% endif %}
+        </nav>
+    </aside>
+    {% endif %}
+
+    <!-- Page Content -->
+    <main class="main-content {% if not user.is_authenticated %}full-width{% endif %}" id="page-content">
+        <!-- Django Messages as Toasts -->
+        {% if messages %}
+            <div id="django-messages" style="display:none">
+                {% for message in messages %}
+                    <span data-level="{{ message.tags }}" data-text="{{ message }}"></span>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        {% block content %}{% endblock %}
+    </main>
+</div>
+
+<!-- Scripts -->
+<script>
+    // CSRF token for AJAX
+    window.CSRF_TOKEN = "{{ csrf_token }}";
+    window.IS_AUTHENTICATED = {% if user.is_authenticated %}true{% else %}false{% endif %};
+</script>
+<script src="{% static 'js/main.js' %}"></script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

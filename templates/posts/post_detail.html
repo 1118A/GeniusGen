@@ -1,0 +1,147 @@
+{% extends 'base.html' %}
+{% block title %}{{ post.title }}{% endblock %}
+{% block content %}
+<div class="container">
+
+  <!-- Breadcrumb -->
+  <div class="text-sm text-muted mb-3">
+    <a href="{% url 'posts:feed' %}">Feed</a> &rsaquo; {{ post.title|truncatechars:40 }}
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 340px;gap:2rem;align-items:start;" class="detail-grid">
+
+    <!-- Left: Post content -->
+    <div>
+      {% if post.image %}
+      <div class="post-detail-image">
+        <img src="{{ post.image.url }}" alt="{{ post.title }}">
+      </div>
+      {% endif %}
+
+      <!-- Title & author -->
+      <div class="post-detail-header">
+        <div class="post-card-meta mb-2">
+          <a href="{% url 'accounts:profile' username=post.author.username %}" class="post-author-avatar" style="width:40px;height:40px;font-size:1rem;">
+            {% if post.author.avatar %}<img src="{{ post.author.avatar.url }}" alt="">{% else %}{{ post.author.username|first|upper }}{% endif %}
+          </a>
+          <div>
+            <a href="{% url 'accounts:profile' username=post.author.username %}" class="font-bold">{{ post.author.get_full_name|default:post.author.username }}</a>
+            <div class="text-muted text-sm">{{ post.created_at|date:"N j, Y" }} &bull; {{ post.views_count }} views</div>
+          </div>
+          {% if user == post.author %}
+          <div style="margin-left:auto;display:flex;gap:0.5rem;">
+            <a href="{% url 'posts:edit' pk=post.pk %}" class="btn btn-secondary btn-sm">✏️ Edit</a>
+            <a href="{% url 'posts:delete' pk=post.pk %}" class="btn btn-danger btn-sm">🗑️ Delete</a>
+          </div>
+          {% endif %}
+        </div>
+        <h1 style="font-family:var(--font-display);font-size:1.8rem;font-weight:800;line-height:1.3;margin-bottom:1rem;">{{ post.title }}</h1>
+        <p style="color:var(--text-secondary);font-size:1rem;line-height:1.7;">{{ post.description }}</p>
+      </div>
+
+      <!-- Tech Stack -->
+      <div class="divider"></div>
+      <div class="mb-3">
+        <div class="font-bold mb-2">🛠️ Tech Stack</div>
+        <div class="tech-tags">
+          {% for tag in post.tech_stack_list %}<span class="tech-tag" style="font-size:0.85rem;padding:0.3rem 0.8rem;">{{ tag }}</span>{% endfor %}
+        </div>
+      </div>
+
+      <!-- Collaborators -->
+      {% if post.collaborators.all %}
+      <div class="mb-3">
+        <div class="font-bold mb-2">👥 Collaborators</div>
+        <div class="collaborators-list">
+          {% for collab in post.collaborators.all %}
+          <a href="{% url 'accounts:profile' username=collab.username %}" class="collab-chip">
+            <span style="width:22px;height:22px;border-radius:50%;background:var(--brand-gradient);display:flex;align-items:center;justify-content:center;color:white;font-size:0.7rem;font-weight:700;">{{ collab.username|first|upper }}</span>
+            @{{ collab.username }}
+          </a>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Links -->
+      <div class="post-detail-links">
+        <a href="{{ post.live_link }}" target="_blank" rel="noopener" class="btn btn-primary">🔗 View Live Project</a>
+        {% if post.github_repo %}
+        <a href="{{ post.github_repo }}" target="_blank" rel="noopener" class="btn btn-secondary">⌨️ GitHub Repo</a>
+        {% endif %}
+      </div>
+
+      <!-- Engagement -->
+      <div class="divider"></div>
+      <div class="flex gap-2 mb-4">
+        {% if user.is_authenticated %}
+        <button class="btn btn-secondary like-btn {% if is_liked %}active{% endif %}" data-post-id="{{ post.pk }}" style="{% if is_liked %}border-color:var(--brand-secondary);color:var(--brand-secondary);{% endif %}">
+          <span class="like-icon">{% if is_liked %}❤️{% else %}🤍{% endif %}</span>
+          <span class="like-count">{{ post.likes_count }}</span> Likes
+        </button>
+        <button class="btn btn-secondary bookmark-btn {% if is_bookmarked %}bookmarked{% endif %}" data-post-id="{{ post.pk }}" style="{% if is_bookmarked %}border-color:var(--brand-accent);color:var(--brand-accent);{% endif %}">
+          <span class="bookmark-icon">{% if is_bookmarked %}🔖{% else %}🏷️{% endif %}</span>
+          {% if is_bookmarked %}Bookmarked{% else %}Bookmark{% endif %}
+        </button>
+        {% else %}
+        <span class="text-muted text-sm">❤️ {{ post.likes_count }} likes &bull; <a href="{% url 'accounts:login' %}">Login to engage</a></span>
+        {% endif %}
+      </div>
+
+      <!-- Comments -->
+      <div class="comments-section" id="comments">
+        <h2 class="page-title" style="font-size:1.3rem;margin-bottom:1.5rem;">💬 Comments ({{ post.comments_count }})</h2>
+
+        {% if user.is_authenticated %}
+        <form method="post" class="mb-4">
+          {% csrf_token %}
+          {{ comment_form.content }}
+          <button type="submit" class="btn btn-primary btn-sm mt-2">Add Comment</button>
+        </form>
+        {% endif %}
+
+        {% for comment in post.comments.all %}
+        <div class="comment-item">
+          <a href="{% url 'accounts:profile' username=comment.author.username %}" class="comment-avatar">
+            {% if comment.author.avatar %}<img src="{{ comment.author.avatar.url }}" alt="">{% else %}{{ comment.author.username|first|upper }}{% endif %}
+          </a>
+          <div class="comment-body">
+            <div>
+              <a href="{% url 'accounts:profile' username=comment.author.username %}" class="comment-author">{{ comment.author.username }}</a>
+              <span class="comment-time">{{ comment.created_at|timesince }} ago</span>
+            </div>
+            <div class="comment-text">{{ comment.content }}</div>
+          </div>
+        </div>
+        {% empty %}
+        <div class="text-muted text-sm">No comments yet. Be the first!</div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Right: Sidebar info -->
+    <div style="position:sticky;top:calc(var(--nav-h) + 1.5rem);">
+      <div class="card mb-3">
+        <div class="card-body">
+          <div class="font-bold mb-2">About the author</div>
+          <div class="post-card-meta mb-2">
+            <a href="{% url 'accounts:profile' username=post.author.username %}" class="post-author-avatar" style="width:48px;height:48px;font-size:1.2rem;">
+              {% if post.author.avatar %}<img src="{{ post.author.avatar.url }}" alt="">{% else %}{{ post.author.username|first|upper }}{% endif %}
+            </a>
+            <div>
+              <div class="font-bold">{{ post.author.get_full_name|default:post.author.username }}</div>
+              <div class="text-muted text-sm">@{{ post.author.username }}</div>
+            </div>
+          </div>
+          {% if post.author.bio %}<p class="text-sm text-muted mb-2">{{ post.author.bio|truncatechars:100 }}</p>{% endif %}
+          <a href="{% url 'accounts:profile' username=post.author.username %}" class="btn btn-secondary btn-sm btn-full">View Profile</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+@media(max-width:768px){ .detail-grid{grid-template-columns:1fr!important;} }
+</style>
+{% endblock %}

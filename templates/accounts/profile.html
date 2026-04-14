@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+{% block title %}{{ profile_user.get_full_name|default:profile_user.username }}'s Profile{% endblock %}
+{% block nav_profile %}active{% endblock %}
+{% block content %}
+<div class="container">
+
+  <!-- Hero -->
+  <div class="profile-hero">
+    <div class="profile-avatar">
+      {% if profile_user.avatar %}
+        <img src="{{ profile_user.avatar.url }}" alt="{{ profile_user.username }}">
+      {% else %}
+        {{ profile_user.username|first|upper }}
+      {% endif %}
+    </div>
+    <div class="profile-name">{{ profile_user.get_full_name|default:profile_user.username }}</div>
+    <div class="profile-username">@{{ profile_user.username }}</div>
+    {% if profile_user.bio %}<p class="profile-bio">{{ profile_user.bio }}</p>{% endif %}
+
+    {% if profile_user.skills_list %}
+    <div class="skill-badges">
+      {% for skill in profile_user.skills_list %}<span class="skill-badge">{{ skill }}</span>{% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="profile-stats">
+      <div class="stat-item">
+        <div class="stat-num">{{ posts.count }}</div>
+        <div class="stat-label">Projects</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num" id="followers-count">{{ profile_user.followers_count }}</div>
+        <div class="stat-label">Followers</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num">{{ total_likes }}</div>
+        <div class="stat-label">Total Likes</div>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="flex gap-2 mt-3">
+      {% if profile_user.github_url %}
+        <a href="{{ profile_user.github_url }}" target="_blank" class="btn btn-secondary btn-sm" style="background:rgba(255,255,255,0.2);border-color:rgba(255,255,255,0.3);color:white;">GitHub</a>
+      {% endif %}
+      {% if profile_user.website %}
+        <a href="{{ profile_user.website }}" target="_blank" class="btn btn-secondary btn-sm" style="background:rgba(255,255,255,0.2);border-color:rgba(255,255,255,0.3);color:white;">Website</a>
+      {% endif %}
+      {% if user.is_authenticated and user != profile_user %}
+        <button class="btn btn-sm {% if is_following %}btn-secondary{% else %}btn-primary{% endif %}"
+                id="follow-btn" data-username="{{ profile_user.username }}"
+                style="{% if is_following %}background:rgba(255,255,255,0.2);border-color:rgba(255,255,255,0.3);color:white;{% endif %}">
+          {% if is_following %}✓ Following{% else %}+ Follow{% endif %}
+        </button>
+      {% elif user == profile_user %}
+        <a href="{% url 'accounts:edit_profile' %}" class="btn btn-sm" style="background:rgba(255,255,255,0.2);border-color:rgba(255,255,255,0.3);color:white;">⚙️ Edit Profile</a>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Projects grid -->
+  <div class="page-header">
+    <h2 class="page-title">Projects</h2>
+  </div>
+  {% if posts %}
+  <div class="feed-grid">
+    {% for post in posts %}
+    <div class="post-card">
+      <div class="post-card-image">
+        {% if post.image %}
+          <img src="{{ post.image.url }}" alt="{{ post.title }}" loading="lazy">
+        {% else %}
+          <div class="post-card-image-placeholder">
+            <span class="placeholder-emoji">💻</span>
+            <span style="font-size:0.8rem;">No preview</span>
+          </div>
+        {% endif %}
+      </div>
+      <div class="post-card-body">
+        <h3 class="post-title"><a href="{% url 'posts:detail' pk=post.pk %}">{{ post.title }}</a></h3>
+        <p class="post-description">{{ post.description }}</p>
+        <div class="tech-tags">
+          {% for tag in post.tech_stack_list %}<span class="tech-tag">{{ tag }}</span>{% endfor %}
+        </div>
+      </div>
+      <div class="post-card-footer">
+        <span class="post-action-btn">❤️ {{ post.likes_count }}</span>
+        <span class="post-action-btn">💬 {{ post.comments_count }}</span>
+        <div class="post-links">
+          <a href="{{ post.live_link }}" target="_blank" class="post-link-btn">🔗 Live</a>
+          {% if post.github_repo %}<a href="{{ post.github_repo }}" target="_blank" class="post-link-btn">⌨️ Repo</a>{% endif %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-icon">🚀</div>
+    <div class="empty-title">No projects yet</div>
+    <p class="empty-sub">{% if user == profile_user %}Share your first project!{% else %}This user hasn't posted yet.{% endif %}</p>
+    {% if user == profile_user %}<a href="{% url 'posts:create' %}" class="btn btn-primary">Post a Project</a>{% endif %}
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

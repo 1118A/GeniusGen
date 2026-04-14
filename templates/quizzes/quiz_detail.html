@@ -1,0 +1,235 @@
+{% extends 'base.html' %}
+{% block title %}{{ quiz.title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ── Quiz Attempt Page Styles ── */
+.quiz-header-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;
+}
+.quiz-meta-chips { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.quiz-chip {
+  display: inline-flex; align-items: center; gap: 0.3rem;
+  padding: 0.3rem 0.8rem; border-radius: var(--radius-full);
+  background: var(--bg-surface-2); border: 1px solid var(--border-color);
+  font-size: 0.8rem; font-weight: 500; color: var(--text-secondary);
+}
+.progress-wrap { margin-bottom: 2rem; }
+.progress-label {
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.4rem;
+}
+.question-card {
+  background: var(--bg-surface);
+  border: 1.5px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem 1.75rem;
+  margin-bottom: 1.25rem;
+  transition: border-color 0.2s;
+}
+.question-card.answered { border-color: rgba(67,233,123,0.5); }
+.question-num {
+  font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--brand-primary); font-weight: 700; margin-bottom: 0.6rem;
+}
+.question-text {
+  font-size: 1.05rem; font-weight: 600; line-height: 1.5;
+  color: var(--text-primary); margin-bottom: 1.1rem;
+}
+.choice-label {
+  display: flex; align-items: center; gap: 0.85rem;
+  padding: 0.8rem 1rem; border-radius: var(--radius-md);
+  border: 1.5px solid var(--border-color);
+  cursor: pointer; transition: all 0.18s; margin-bottom: 0.55rem;
+  font-size: 0.92rem; color: var(--text-primary);
+  user-select: none;
+}
+.choice-label:hover { border-color: var(--brand-primary); background: rgba(108,99,255,0.06); }
+.choice-label input[type="radio"] { accent-color: var(--brand-primary); width: 17px; height: 17px; flex-shrink: 0; }
+.choice-label.selected { border-color: var(--brand-primary); background: rgba(108,99,255,0.1); font-weight: 500; }
+
+/* Sticky submit bar */
+.quiz-submit-bar {
+  position: sticky; bottom: 0; left: 0; right: 0; z-index: 100;
+  background: var(--bg-glass);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-top: 1px solid var(--border-color);
+  padding: 1rem 1.5rem;
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  flex-wrap: wrap;
+  margin: 2rem -2rem -2rem;
+  box-shadow: 0 -8px 24px rgba(0,0,0,0.08);
+}
+.answered-status { font-size: 0.875rem; color: var(--text-secondary); }
+.answered-status strong { color: var(--brand-primary); font-size: 1.1rem; }
+
+/* Custom modal */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 9000;
+  background: rgba(0,0,0,0.55); backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; visibility: hidden; transition: all 0.25s;
+}
+.modal-overlay.open { opacity: 1; visibility: visible; }
+.modal-box {
+  background: var(--bg-surface); border: 1px solid var(--border-color);
+  border-radius: var(--radius-xl); padding: 2.5rem;
+  max-width: 420px; width: 90%; text-align: center;
+  box-shadow: var(--shadow-lg);
+  transform: scale(0.92) translateY(16px);
+  transition: transform 0.25s ease;
+}
+.modal-overlay.open .modal-box { transform: scale(1) translateY(0); }
+.modal-icon { font-size: 3rem; margin-bottom: 0.75rem; }
+.modal-title { font-family: var(--font-display); font-size: 1.4rem; font-weight: 700; margin-bottom: 0.5rem; }
+.modal-sub { color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1.75rem; }
+.modal-actions { display: flex; gap: 0.75rem; justify-content: center; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width:720px; padding-bottom: 5rem;">
+
+  <!-- Header -->
+  <div class="quiz-header-bar">
+    <div>
+      <h1 class="page-title" style="margin-bottom:0.25rem;">{{ quiz.title }}</h1>
+      <p class="page-subtitle">{{ quiz.description }}</p>
+    </div>
+    <div class="quiz-timer-display" id="quiz-timer-wrapper">
+      ⏱️ <span id="quiz-timer" data-seconds="{{ time_limit_seconds }}">
+        {% with m=quiz.time_limit %}{{ m }}:00{% endwith %}
+      </span>
+    </div>
+  </div>
+
+  <!-- Meta chips -->
+  <div class="quiz-meta-chips mb-3">
+    <span class="quiz-chip">❓ {{ questions|length }} Question{{ questions|length|pluralize }}</span>
+    <span class="quiz-chip">⏱️ {{ quiz.time_limit }} min limit</span>
+    <span class="quiz-chip">⚠️ One attempt only</span>
+  </div>
+
+  <!-- Progress bar -->
+  <div class="progress-wrap">
+    <div class="progress-label">
+      <span>Progress</span>
+      <span id="progress-text">0 / {{ questions|length }} answered</span>
+    </div>
+    <div class="quiz-progress">
+      <div class="quiz-progress-bar" id="quiz-progress-bar" style="width:0%"></div>
+    </div>
+  </div>
+
+  <!-- Questions form -->
+  <form method="post" action="{% url 'quizzes:submit' pk=quiz.pk %}" id="quiz-form">
+    {% csrf_token %}
+
+    {% for question in questions %}
+    <div class="question-card" id="q-{{ question.pk }}" data-qid="{{ question.pk }}">
+      <div class="question-num">Question {{ forloop.counter }} of {{ questions|length }} &nbsp;·&nbsp; {{ question.point_value }} pt{{ question.point_value|pluralize }}</div>
+      <div class="question-text">{{ question.text }}</div>
+      {% for choice in question.choices.all %}
+      <label class="choice-label" id="label-{{ choice.pk }}">
+        <input type="radio" name="question_{{ question.pk }}" value="{{ choice.pk }}">
+        {{ choice.text }}
+      </label>
+      {% endfor %}
+    </div>
+    {% endfor %}
+
+    <!-- Sticky submit bar -->
+    <div class="quiz-submit-bar">
+      <div class="answered-status">
+        <strong id="answered-count">0</strong> / {{ questions|length }} questions answered
+      </div>
+      <div style="display:flex;align-items:center;gap:0.75rem;">
+        <a href="{% url 'quizzes:list' %}" class="btn btn-ghost btn-sm">← Back</a>
+        <button type="button" class="btn btn-primary btn-lg" id="submit-quiz-btn">
+          ✅ Submit Quiz
+        </button>
+      </div>
+    </div>
+  </form>
+</div>
+
+<!-- Confirm Modal -->
+<div class="modal-overlay" id="submit-modal">
+  <div class="modal-box">
+    <div class="modal-icon">📋</div>
+    <div class="modal-title">Submit Quiz?</div>
+    <div class="modal-sub" id="modal-sub-text">
+      You have answered <strong id="modal-answered">0</strong> out of <strong>{{ questions|length }}</strong> questions.
+      Once submitted, you <strong>cannot</strong> retake this quiz.
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost btn-lg" id="modal-cancel">Cancel</button>
+      <button class="btn btn-primary btn-lg" id="modal-confirm">Submit Now →</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+  const totalQ = {{ questions|length }};
+  const progressBar = document.getElementById('quiz-progress-bar');
+  const progressText = document.getElementById('progress-text');
+  const answeredCount = document.getElementById('answered-count');
+  const modalAnswered = document.getElementById('modal-answered');
+
+  function updateProgress() {
+    const answered = new Set(
+      [...document.querySelectorAll('#quiz-form input[type="radio"]:checked')].map(r => r.name)
+    ).size;
+    const pct = totalQ ? (answered / totalQ) * 100 : 0;
+    progressBar.style.width = pct + '%';
+    progressText.textContent = `${answered} / ${totalQ} answered`;
+    answeredCount.textContent = answered;
+    if (modalAnswered) modalAnswered.textContent = answered;
+
+    // Mark answered cards
+    document.querySelectorAll('.question-card').forEach(card => {
+      const qid = card.dataset.qid;
+      const checked = card.querySelector('input[type="radio"]:checked');
+      card.classList.toggle('answered', !!checked);
+    });
+  }
+
+  // Highlight selected label
+  document.querySelectorAll('.choice-label').forEach(label => {
+    const radio = label.querySelector('input[type="radio"]');
+    radio.addEventListener('change', () => {
+      // Deselect siblings
+      const name = radio.name;
+      document.querySelectorAll(`input[name="${name}"]`).forEach(r => {
+        r.closest('.choice-label').classList.remove('selected');
+      });
+      label.classList.add('selected');
+      updateProgress();
+    });
+  });
+
+  // Submit modal
+  const modal = document.getElementById('submit-modal');
+  const submitBtn = document.getElementById('submit-quiz-btn');
+  const cancelBtn = document.getElementById('modal-cancel');
+  const confirmBtn = document.getElementById('modal-confirm');
+
+  submitBtn.addEventListener('click', () => {
+    updateProgress();
+    modal.classList.add('open');
+  });
+  cancelBtn.addEventListener('click', () => modal.classList.remove('open'));
+  modal.addEventListener('click', e => { if (e.target === modal) modal.classList.remove('open'); });
+  confirmBtn.addEventListener('click', () => {
+    confirmBtn.textContent = 'Submitting…';
+    confirmBtn.disabled = true;
+    document.getElementById('quiz-form').submit();
+  });
+})();
+</script>
+{% endblock %}

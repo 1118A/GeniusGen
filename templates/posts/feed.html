@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Project Feed{% endblock %}
+{% block nav_feed %}active{% endblock %}
+{% block content %}
+<div class="container-wide">
+
+  <div class="feed-header">
+    <div>
+      <h1 class="page-title">🏠 Project Feed</h1>
+      <p class="page-subtitle">Discover real student projects</p>
+    </div>
+    <div class="sort-tabs">
+      <a href="?sort=latest" class="sort-tab {% if sort == 'latest' %}active{% endif %}">🕐 Latest</a>
+      <a href="?sort=trending" class="sort-tab {% if sort == 'trending' %}active{% endif %}">🔥 Trending</a>
+    </div>
+  </div>
+
+  {% if page_obj.object_list %}
+  <div class="feed-grid" id="feed-grid">
+    {% for post in page_obj %}
+    <div class="post-card">
+      <div class="post-card-image">
+        {% if post.image %}
+          <img src="{{ post.image.url }}" alt="{{ post.title }}" loading="lazy">
+        {% else %}
+          <div class="post-card-image-placeholder">
+            <span class="placeholder-emoji">💻</span>
+            <span style="font-size:0.8rem;color:var(--text-muted)">No screenshot</span>
+          </div>
+        {% endif %}
+      </div>
+      <div class="post-card-body">
+        <div class="post-card-meta">
+          <a href="{% url 'accounts:profile' username=post.author.username %}" class="post-author-avatar" title="{{ post.author.username }}">
+            {% if post.author.avatar %}<img src="{{ post.author.avatar.url }}" alt="{{ post.author.username }}">{% else %}{{ post.author.username|first|upper }}{% endif %}
+          </a>
+          <a href="{% url 'accounts:profile' username=post.author.username %}" class="post-author-name">{{ post.author.get_full_name|default:post.author.username }}</a>
+          <span class="post-date">{{ post.created_at|timesince }} ago</span>
+        </div>
+        <h3 class="post-title"><a href="{% url 'posts:detail' pk=post.pk %}">{{ post.title }}</a></h3>
+        <p class="post-description">{{ post.description }}</p>
+        <div class="tech-tags">
+          {% for tag in post.tech_stack_list %}<span class="tech-tag">{{ tag }}</span>{% endfor %}
+        </div>
+        {% if post.collaborators.all %}
+        <div class="text-sm text-muted" style="margin-bottom:0.75rem;">
+          👥 {% for c in post.collaborators.all %}
+            <a href="{% url 'accounts:profile' username=c.username %}">@{{ c.username }}</a>{% if not forloop.last %}, {% endif %}
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+      <div class="post-card-footer">
+        <button class="post-action-btn like-btn {% if post.pk in liked_ids %}active{% endif %}" data-post-id="{{ post.pk }}">
+          <span class="like-icon">{% if post.pk in liked_ids %}❤️{% else %}🤍{% endif %}</span>
+          <span class="like-count">{{ post.likes_count }}</span>
+        </button>
+        <a href="{% url 'posts:detail' pk=post.pk %}#comments" class="post-action-btn">
+          💬 <span>{{ post.comments_count }}</span>
+        </a>
+        <button class="post-action-btn bookmark-btn {% if post.pk in bookmarked_ids %}bookmarked{% endif %}" data-post-id="{{ post.pk }}">
+          <span class="bookmark-icon">{% if post.pk in bookmarked_ids %}🔖{% else %}🏷️{% endif %}</span>
+        </button>
+        <div class="post-links">
+          <a href="{{ post.live_link }}" target="_blank" rel="noopener" class="post-link-btn">🔗 Live</a>
+          {% if post.github_repo %}<a href="{{ post.github_repo }}" target="_blank" rel="noopener" class="post-link-btn">⌨️ Repo</a>{% endif %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Pagination -->
+  {% if page_obj.has_other_pages %}
+  <div class="pagination">
+    {% if page_obj.has_previous %}
+      <a href="?page={{ page_obj.previous_page_number }}&sort={{ sort }}" class="page-btn">‹</a>
+    {% endif %}
+    {% for num in page_obj.paginator.page_range %}
+      {% if page_obj.number == num %}
+        <span class="page-btn current">{{ num }}</span>
+      {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+        <a href="?page={{ num }}&sort={{ sort }}" class="page-btn">{{ num }}</a>
+      {% endif %}
+    {% endfor %}
+    {% if page_obj.has_next %}
+      <a href="?page={{ page_obj.next_page_number }}&sort={{ sort }}" class="page-btn">›</a>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-icon">🌱</div>
+    <div class="empty-title">No projects yet</div>
+    <p class="empty-sub">Be the first to share a project!</p>
+    {% if user.is_authenticated %}
+    <a href="{% url 'posts:create' %}" class="btn btn-primary btn-lg">Post Your Project</a>
+    {% else %}
+    <a href="{% url 'accounts:signup' %}" class="btn btn-primary btn-lg">Join GeniusGen</a>
+    {% endif %}
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}
