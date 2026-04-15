@@ -49,7 +49,7 @@
       {% if user.is_authenticated and user != profile_user %}
         <button class="btn btn-sm {% if is_following %}btn-secondary{% else %}btn-primary{% endif %}"
                 id="follow-btn" data-username="{{ profile_user.username }}"
-                style="{% if is_following %}background:rgba(255,255,255,0.2);border-color:rgba(255,255,255,0.3);color:white;{% endif %}">
+                {% if is_following %}style="background:rgba(255,255,255,0.2);border-color:rgba(255,255,255,0.3);color:white;"{% endif %}>
           {% if is_following %}✓ Following{% else %}+ Follow{% endif %}
         </button>
       {% elif user == profile_user %}

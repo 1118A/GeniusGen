@@ -167,7 +167,7 @@
 <script>
     // CSRF token for AJAX
     window.CSRF_TOKEN = "{{ csrf_token }}";
-    window.IS_AUTHENTICATED = {% if user.is_authenticated %}true{% else %}false{% endif %};
+    window.IS_AUTHENTICATED = "{{ user.is_authenticated|yesno:'true,false' }}" === "true";
 </script>
 <script src="{% static 'js/main.js' %}"></script>
 {% block extra_js %}{% endblock %}

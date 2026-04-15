@@ -4,3 +4,9 @@ django-cors-headers
 django-environ
 pillow
 django-lifecycle
+
+# Production
+gunicorn
+whitenoise[brotli]
+dj-database-url
+psycopg2-binary

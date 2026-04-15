@@ -115,7 +115,7 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   white-space: nowrap;
 }
 .brand-icon { font-size: 1.5rem; }
-.brand-text { background: var(--brand-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.brand-text { background: var(--brand-gradient); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
 
 .nav-search { flex: 1; max-width: 420px; margin: 0 1rem; }
 .search-form {
@@ -322,7 +322,7 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 .post-title { font-family: var(--font-display); font-size: 1rem; font-weight: 700; margin-bottom: 0.5rem; line-height: 1.4; }
 .post-title a { color: var(--text-primary); }
 .post-title a:hover { color: var(--brand-primary); }
-.post-description { font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; flex: 1; }
+.post-description { font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; flex: 1; }
 .tech-tags { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-bottom: 1rem; }
 .tech-tag {
   padding: 0.2rem 0.6rem;
@@ -396,7 +396,7 @@ textarea.form-control { resize: vertical; }
 .auth-page { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 2rem; background: var(--bg-base); padding-top: calc(var(--nav-h) + 2rem); }
 .auth-card { width: 100%; max-width: 460px; }
 .auth-logo { text-align: center; margin-bottom: 2rem; }
-.auth-logo .logo-text { font-family: var(--font-display); font-size: 2rem; font-weight: 800; background: var(--brand-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.auth-logo .logo-text { font-family: var(--font-display); font-size: 2rem; font-weight: 800; background: var(--brand-gradient); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
 .auth-logo .logo-sub { color: var(--text-secondary); font-size: 0.9rem; }
 
 /* ── Profile ── */
