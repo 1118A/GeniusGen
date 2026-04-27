@@ -7,29 +7,21 @@ on:
   workflow_dispatch:
     inputs:
       action:
-        description: Whether to deploy up or down
+        description: Deploy action
         required: true
         default: up
         type: choice
         options:
           - up
           - down
-      stack:
-        description: The stack to deploy up or down
-        default: geniusgen
 
 jobs:
   defang:
-    name: Defang ${{ github.event.inputs.action || 'up' }} ${{ github.event.inputs.stack || 'geniusgen' }}
     runs-on: ubuntu-latest
 
     permissions:
       contents: read
       id-token: write
-
-    concurrency:
-      cancel-in-progress: false
-      group: deploy-geniusgen-${{ github.event.inputs.stack || 'geniusgen' }}
 
     steps:
       - name: Checkout Repo
@@ -39,16 +31,11 @@ jobs:
         uses: DefangLabs/defang-github-action@v1
         with:
           command: ${{ github.event.inputs.action || 'up' }}
-          project: geniusgen                 # ✅ FIXED
-          stack: ${{ github.event.inputs.stack || 'geniusgen' }}
-          compose-files: docker-compose.yml # ✅ FIXED
+          project: geniusgen
+          compose-files: docker-compose.yml
 
       - name: Deployment Summary
         uses: DefangLabs/defang-github-action@v1
         with:
           command: services
-          project: geniusgen                 # ✅ FIXED
-          stack: ${{ github.event.inputs.stack || 'geniusgen' }}
-          compose-files: docker-compose.yml # ✅ FIXED
-
-    environment: defang-geniusgen
+          project: geniusgen
